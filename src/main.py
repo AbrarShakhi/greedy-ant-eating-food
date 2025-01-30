@@ -1,3 +1,5 @@
+from src.mst import make_mst
+
 from sys import exit
 from csv import reader
 from os import path
@@ -44,28 +46,27 @@ def calc_paths(info):
 
 def display_graph(mat, info) -> None:
     pygame.init()
+    clock = pygame.time.Clock()
+
     width, height = 800, 800
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Draw XY Tuples")
     background_color = (0, 0, 0)
     circle_color = (255, 255, 255)
-    connected_line_color = (255, 0, 0)
-    disconnected_line_color = (100, 10, 10)
+    connected_line_color = (255, 100, 0)
+    disconnected_line_color = (140, 0, 0)
 
     connected_points = []
     disconnected_points = []
     n = len(mat)
     for i in range(n):
-        for j in range(n):
+        for j in range(i, n):
             ipos = info[i][3]
             jpos = info[j][3]
             if mat[i][j] != 0:
-                connected_points.append(ipos)
-                connected_points.append(jpos)
+                connected_points.append((ipos, jpos))
             else:
-                disconnected_points.append(ipos)
-                disconnected_points.append(jpos)
-
+                disconnected_points.append((ipos, jpos))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -74,23 +75,28 @@ def display_graph(mat, info) -> None:
 
         screen.fill(background_color)
 
-        if len(disconnected_points) >= 2:
-            pygame.draw.lines(
-                screen, disconnected_line_color, True, disconnected_points, 1
-            )
-        if len(connected_points) >= 2:
-            pygame.draw.lines(screen, connected_line_color, True, connected_points, 2)
+        for a, b in disconnected_points:
+            pygame.draw.line(screen, disconnected_line_color, a, b, 1)
+        for a, b in connected_points:
+            pygame.draw.line(screen, connected_line_color, a, b, 2)
 
-        for _, (_, _, _, (x, y)) in info.items():
-            pygame.draw.circle(screen, circle_color, (x, y), 5)
+        for _, (_, _, _, pos) in info.items():
+            pygame.draw.circle(screen, circle_color, pos, 5)
 
+        clock.tick(12)
         pygame.display.flip()
 
 
 def main(data_dir="."):
     holes_info = load_hole_info_csv(path.join(data_dir, "info.csv"))
-    mat = calc_paths(holes_info)
-    display_graph(mat, holes_info)
+    adjmat = calc_paths(holes_info)
+
+    display_graph(adjmat, holes_info)
+
+    mst_adjmat = make_mst(adjmat)
+    print(mst_adjmat)
+
+    display_graph(mst_adjmat, holes_info)
 
 
 if __name__ == "__main__":
