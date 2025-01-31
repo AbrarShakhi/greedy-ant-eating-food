@@ -54,7 +54,7 @@ def display_graph(mat, info) -> None:
     background_color = (0, 0, 0)
     circle_color = (255, 255, 255)
     connected_line_color = (255, 100, 0)
-    disconnected_line_color = (140, 0, 0)
+    disconnected_line_color = (40, 0, 0)
 
     connected_points = []
     disconnected_points = []
@@ -78,7 +78,7 @@ def display_graph(mat, info) -> None:
         for a, b in disconnected_points:
             pygame.draw.line(screen, disconnected_line_color, a, b, 1)
         for a, b in connected_points:
-            pygame.draw.line(screen, connected_line_color, a, b, 2)
+            pygame.draw.line(screen, connected_line_color, a, b, 1)
 
         for _, (_, _, _, pos) in info.items():
             pygame.draw.circle(screen, circle_color, pos, 5)
