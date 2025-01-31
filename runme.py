@@ -1,13 +1,11 @@
-try:
-    import pygame
-except:
-    print("pygame is not installed.")
-    print("please install pygame.")
-    from sys import exit
+from sys import exit
 
+try:
+    import src.main
+except:
+    print("src/main.py does not exists.")
     exit(1)
 
-if __name__ == "__main__":
-    import src.main as start
 
-    start.main()
+if __name__ == "__main__":
+    src.main.main("src")
