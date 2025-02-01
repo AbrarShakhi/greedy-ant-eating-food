@@ -1,8 +1,7 @@
-from sys import exit
+from sys import exit, argv
 from csv import reader
 from os import path
 from math import sqrt
-from random import randint
 
 try:
     import pygame
@@ -16,6 +15,15 @@ except:
     print("numpy is not installed.")
     print("please install numpy.")
     exit(1)
+
+
+# error --------------------------------------------------
+def show_input_file_error(filename):
+    print("Unable to open file ", filename, " or file don't exists")
+    print("Use -p [path] set the path")
+    print("exemple:")
+    print('python main.py -p "info.csv"')
+    exit()
 
 
 # minimam spanning tree ---------------------------------
@@ -52,12 +60,7 @@ def make_mst(adjmat):
     edges = []
 
     for i in range(n):
-        # for j in range(n):
-        # sematric matric
-        # undirected graph
         for j in range(i, n):
-            # if adjmat[i][j] != 0:
-            # dsu will discard self loop
             edges.append((int(adjmat[i][j]), (i, j)))
 
     edges = sorted(edges, key=lambda based_on: based_on[0])
@@ -80,22 +83,24 @@ def make_mst(adjmat):
 
 
 # input ----------------------------------------
-def load_hole_info_csv(filename) -> dict:
-    holes = {}
+def load_hole_info_csv(filename):
+    foods = {}
 
-    with open(filename, mode="r") as file:
-        csv_reader = reader(file)
-        next(csv_reader)
+    try:
+        with open(filename, mode="r") as file:
+            csv_reader = reader(file)
+            next(csv_reader)
 
-        for row in csv_reader:
-            hole_number = int(row[0])
-            reveal = int(row[1])
-            finish = int(row[2])
-            dot_val = int(row[3])
-            pos = (int(row[4]), int(row[5]))
-            holes[hole_number] = (reveal, finish, dot_val, pos)
-
-    return holes
+            for row in csv_reader:
+                food_number = int(row[0])
+                appear = int(row[1])
+                waste = int(row[2])
+                food_val = int(row[3])
+                pos = (int(row[4]), int(row[5]))
+                foods[food_number] = (appear, waste, food_val, pos)
+    except FileNotFoundError or FileExistsError:
+        show_input_file_error(filename)
+    return foods
 
 
 def calc_paths(info):
@@ -112,18 +117,24 @@ def calc_paths(info):
             jX, jY = jpos
             distance = int(sqrt((iX - jX) ** 2 + (iY - jY) ** 2))
             adjmat[i][j] = distance
+            adjmat[j][i] = distance
 
     return adjmat
 
 
 # pygame -----------------------------------------------
-def display_graph(mat, info, highlight=[]) -> None:
+def display_graph(
+    matrix,
+    info,
+    highlight=[],
+    window_title="food scattered path",
+    width=1200,
+    height=800,
+) -> None:
+    window_size = (width, height)
+
     pygame.init()
     clock = pygame.time.Clock()
-
-    width, height = 1200, 800
-    screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption("Draw XY Tuples")
 
     background_color = (0, 0, 0)
     circle_color = (255, 255, 255)
@@ -133,15 +144,21 @@ def display_graph(mat, info, highlight=[]) -> None:
 
     connected_points = []
     disconnected_points = []
-    n = len(mat)
+
+    screen = pygame.display.set_mode(window_size)
+    pygame.display.set_caption(window_title)
+
+    n = len(matrix)
     for i in range(n):
         for j in range(i, n):
             ipos = info[i][3]
             jpos = info[j][3]
-            if mat[i][j] != 0:
+
+            if matrix[i][j] != 0:
                 connected_points.append((ipos, jpos))
             else:
                 disconnected_points.append((ipos, jpos))
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -151,9 +168,10 @@ def display_graph(mat, info, highlight=[]) -> None:
         screen.fill(background_color)
 
         for a, b in disconnected_points:
-            pygame.draw.line(screen, disconnected_line_color, a, b, 1)
+            pygame.draw.line(screen, disconnected_line_color, a, b)
+
         for a, b in connected_points:
-            pygame.draw.line(screen, connected_line_color, a, b, 1)
+            pygame.draw.line(screen, connected_line_color, a, b)
 
         for _, (_, _, val, pos) in info.items():
             pygame.draw.circle(screen, circle_color, pos, val)
@@ -162,15 +180,16 @@ def display_graph(mat, info, highlight=[]) -> None:
             _, _, val, pos = info[i]
             pygame.draw.circle(screen, highlighted_circle_color, pos, val)
 
-        clock.tick(12)
+        clock.tick(11)
         pygame.display.flip()
 
 
 # activity selection
-def select_max_dot(info):
+def select_max_foods(info):
     n = len(info)
     for i, _ in info.items():
         n = max(i, n)
+
     info_list = [None] * n
     for i, tup in info.items():
         info_list[i] = (i, tup[0], tup[1])
@@ -178,23 +197,24 @@ def select_max_dot(info):
     info_list = sorted(info_list, key=lambda based_on: based_on[2])
 
     i = 0
-    selected = [info_list[0][0]]
+    selected_food_no = [info_list[0][0]]
     for j in range(1, n):
         if info_list[j][1] >= info_list[i][2]:
-            selected.append(info_list[j][0])
+            selected_food_no.append(info_list[j][0])
             i = j
-    return selected
+
+    return selected_food_no
 
 
 # 0/1 knapsack ----------------------------------
-def get_dot_val(W, holes_info, selection):
+def maximum_test_in_time(W, holes_info, selection):
     holes = []
     for i in selection:
         starttime, endtime, value, _ = holes_info[i]
         duration = endtime - starttime
         if duration < 0:
             print("there is error on input")
-            print("finish time >. staring time")
+            print("finish time > staring time")
             exit(-1)
         holes.append((value / duration, duration, value))
 
@@ -218,27 +238,43 @@ def get_dot_val(W, holes_info, selection):
 
 
 # main ----------------------------------------------------
-def main(data_dir="."):
-    holes_info = load_hole_info_csv(path.join(data_dir, "info.csv"))
-    adjmat = calc_paths(holes_info)
+def main(input_filepath):
+    foods_info = load_hole_info_csv(input_filepath)
+    foodpath_adjmat = calc_paths(foods_info)
 
-    display_graph(adjmat, holes_info)
+    display_graph(matrix=foodpath_adjmat, info=foods_info)
 
-    mst_adjmat = make_mst(adjmat)
+    mst_foodpath_adjmat = make_mst(foodpath_adjmat)
 
-    display_graph(mst_adjmat, holes_info)
+    display_graph(
+        matrix=mst_foodpath_adjmat,
+        info=foods_info,
+        window_title="food scattered path with minimum distance (minimum spanning tree)",
+    )
 
-    picked_up = select_max_dot(holes_info)
+    selected_food_no = select_max_foods(foods_info)
+    display_graph(
+        matrix=mst_foodpath_adjmat,
+        info=foods_info,
+        highlight=selected_food_no,
+        window_title="maximum food selected (greens)",
+    )
 
-    display_graph(mst_adjmat, holes_info, picked_up)
-    sum = 0
-    for i in picked_up:
-        sum += holes_info[i][2]
-
-    maximum_time_to_eat = (sum * 2) // 3
-    max_dot_val = get_dot_val(maximum_time_to_eat, holes_info, picked_up)
-    print(max_dot_val)
+    maximum_time_to_eat = 100  # totl weight of frk
+    max_test = maximum_test_in_time(maximum_time_to_eat, foods_info, selected_food_no)
+    print(max_test)
 
 
 if __name__ == "__main__":
-    main()
+    input_filepath = path.join(".", "info.csv")
+    for i, arg in enumerate(argv):
+        if arg == "-p" or arg == "--path":
+            try:
+                input_filepath = argv[i + 1]
+            except:
+                print("filepath required")
+                show_input_file_error(None)
+                exit()
+            break
+
+    main(input_filepath)

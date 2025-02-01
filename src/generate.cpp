@@ -1,12 +1,10 @@
 #include <chrono>
 #include <cstdint>
-#include <cstdlib>
-#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <random>
 
-int hole_number = 50;
+int number_of_foods = 50;
 int WIDTH = 1200;
 int HEIGHT = 800;
 
@@ -19,7 +17,7 @@ int randint(int a, int b) {
 }
 
 int main() {
-	srand(time(nullptr));
+	const char *filename = "info.csv";
 
 	std::ofstream file("info.csv");
 	if (!file) {
@@ -27,19 +25,26 @@ int main() {
 		return 1;
 	}
 
-	file << "hole Number,reveal time,finish time,dot value,x position, y "
-	        "position\n";
+	file << "food_number,"
+	        "food_appear_time,"
+	        "food_waste_time,"
+	        "taste_value,"
+	        "x_pos,"
+	        "y_pos\n";
 
-	for (int i = 0; i < hole_number; i++) {
-		int reveal = randint(1, 100);
-		int finish = reveal + randint(1, 10);
-		int dot_val = randint(3, 10);
-		int positionX = randint(5, WIDTH - 5);
-		int positionY = randint(5, HEIGHT - 5);
+	for (int food_number = 0; food_number < number_of_foods; food_number++) {
+		int food_appear_time = randint(1, 100);
+		int food_waste_time = food_appear_time + randint(1, 10);
+		int taste_value = randint(5, 13);
+		int x_pos = randint(5, WIDTH - 5);
+		int y_pos = randint(5, HEIGHT - 5);
 
-		file << i << "," << reveal << "," << finish << "," << dot_val << ","
-		     << positionX << "," << positionY << "\n";
+		file << food_number << "," << food_appear_time << "," << food_waste_time
+		     << "," << taste_value << "," << x_pos << "," << y_pos << "\n";
 	}
+
+	std::cout << number_of_foods << " Number of foods has been written in "
+	          << filename << '\n';
 
 	file.close();
 
