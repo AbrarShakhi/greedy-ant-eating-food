@@ -2,6 +2,7 @@ from sys import exit, argv
 from csv import reader
 from os import path
 from math import sqrt
+from time import sleep
 
 try:
     import pygame
@@ -20,9 +21,6 @@ except:
 # error --------------------------------------------------
 def show_input_file_error(filename):
     print("Unable to open file ", filename, " or file don't exists")
-    print("Use -p [path] set the path")
-    print("exemple:")
-    print('python main.py -p "info.csv"')
     exit()
 
 
@@ -83,7 +81,7 @@ def make_mst(adjmat):
 
 
 # input ----------------------------------------
-def load_hole_info_csv(filename):
+def parse_hole_info_csv(filename):
     foods = {}
 
     try:
@@ -238,43 +236,74 @@ def maximum_test_in_time(W, holes_info, selection):
 
 
 # main ----------------------------------------------------
-def main(input_filepath):
-    foods_info = load_hole_info_csv(input_filepath)
+def main(input_filepath, story_filepath):
+    foods_info = parse_hole_info_csv(input_filepath)
+
+    print(
+        "In the morning, there is an ant who is searching for food. After some time of searching, he finds a lot of food. But there is a problem, there are so many foods at a specific time that appear and also after a specific time that disappear. Some food has more taste than some foods, and he needs some time to consume the food. His mother tells him to get home before the dawn. So, he wants to consume the maximum number of tasty food before dawn. Can you help him?"
+    )
+    print(
+        "[Human] Yes, why not? Let's identify how many foods are available and every possible way to reach those foods (Completed Graph)."
+    )
+    print(
+        "[Ant] Hey, I can help you because I have some super sensation. I can identify each food location and how tasty the food is. Here it is,"
+    )
     foodpath_adjmat = calc_paths(foods_info)
+    if input("Display the graph (default='y'): [Y/n]").lower() != "n":
+        display_graph(matrix=foodpath_adjmat, info=foods_info)
 
-    display_graph(matrix=foodpath_adjmat, info=foods_info)
-
+    print("[Ant] Yes, Can you do something?")
+    print(
+        "[Human] Hmm, We need a Minimum path to get all the food. So we used Kruskal’s algorithm to find the minimum path to all foods. Here it is,"
+    )
     mst_foodpath_adjmat = make_mst(foodpath_adjmat)
 
-    display_graph(
-        matrix=mst_foodpath_adjmat,
-        info=foods_info,
-        window_title="food scattered path with minimum distance (minimum spanning tree)",
+    if input("Display the minimum spanning tree (default='y'): [Y/n]").lower() != "n":
+        display_graph(
+            matrix=mst_foodpath_adjmat,
+            info=foods_info,
+            window_title="food scattered path with minimum distance (minimum spanning tree)",
+        )
+
+    print("[Ant] Wow! So, I can start eating now.")
+    print(
+        "[human] No, wait every food needs time to consume. If you start eating now, you will not be able to go home before dawn."
+    )
+    print("[Ant] So, what i am going to do now?")
+
+    print(
+        "[Human] Don't worry, I get you. You are not going home with an empty stomach. I use Activity selection To get the maximum number of foods and also tasty before the dawn. Here it is,"
     )
 
     selected_food_no = select_max_foods(foods_info)
-    display_graph(
-        matrix=mst_foodpath_adjmat,
-        info=foods_info,
-        highlight=selected_food_no,
-        window_title="maximum food selected (greens)",
+    if (
+        input("Display the foods (greens means selected) (default='y'): [Y/n]").lower()
+        != "n"
+    ):
+        display_graph(
+            matrix=mst_foodpath_adjmat,
+            info=foods_info,
+            highlight=selected_food_no,
+            window_title="maximum food selected (greens)",
+        )
+    print(
+        "[Human] Seeing those green dots, if you eat those foods, you will get the maximum tasty food before dawn."
     )
-
-    maximum_time_to_eat = 100  # totl weight of frk
+    maximum_time_to_eat = 100
+    print(
+        f"[Ant] But I dont have enough time to eat all the selected foods. I oply have {maximum_time_to_eat} minutes to eat. But I want to get the maximum test,"
+    )
     max_test = maximum_test_in_time(maximum_time_to_eat, foods_info, selected_food_no)
-    print(max_test)
+    print(
+        f"[Human] Hmmmm! If you have {maximum_time_to_eat} time. You only can get test value {max_test}"
+    )
+    print(
+        "[Ant] Thank you human for this Help. I hope You get a CGPA of 4.00 for this hard work."
+    )
+    print("Written by - Fahim Shahriar")
 
 
 if __name__ == "__main__":
     input_filepath = path.join(".", "info.csv")
-    for i, arg in enumerate(argv):
-        if arg == "-p" or arg == "--path":
-            try:
-                input_filepath = argv[i + 1]
-            except:
-                print("filepath required")
-                show_input_file_error(None)
-                exit()
-            break
-
-    main(input_filepath)
+    story_filepath = path.join(".", "story.txt")
+    main(input_filepath, story_filepath)
